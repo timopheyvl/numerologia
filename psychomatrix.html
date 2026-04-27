@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Психоматрица по дате рождения</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="date"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .calculations {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .calculations h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .calc-item {
+            margin-bottom: 10px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .calc-item strong {
+            color: #667eea;
+        }
+
+        .matrix-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 5px;
+            background: #333;
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .cell {
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .cell-number {
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .cell-digits {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .cell-count {
+            font-size: 12px;
+            color: #667eea;
+            margin-top: 5px;
+        }
+
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .legend h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .legend p {
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 Психоматрица по дате рождения</h1>
+        
+        <div class="input-section">
+            <label for="birthdate">Выберите дату рождения:</label>
+            <input type="date" id="birthdate">
+        </div>
+
+        <button onclick="calculateMatrix()">Рассчитать матрицу</button>
+
+        <div class="results" id="results">
+            <div class="calculations">
+                <h3>📊 Расчет рабочих чисел:</h3>
+                <div class="calc-item" id="calc1"></div>
+                <div class="calc-item" id="calc2"></div>
+                <div class="calc-item" id="calc3"></div>
+                <div class="calc-item" id="calc4"></div>
+                <div class="calc-item" id="allDigits"></div>
+            </div>
+
+            <div class="matrix-container">
+                <div class="matrix" id="matrix">
+                    <!-- Ячейки будут добавлены через JS -->
+                </div>
+            </div>
+
+            <div class="legend">
+                <h4>📝 Как читать матрицу:</h4>
+                <p>Каждая ячейка соответствует цифре от 1 до 9. Количество цифр в ячейке показывает силу влияния этой цифры на вашу личность.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function sumDigits(number) {
+            return String(number)
+                .split('')
+                .reduce((sum, digit) => sum + parseInt(digit), 0);
+        }
+
+        function getAllDigits(dateStr) {
+            // Удаляем дефисы и получаем все цифры
+            const digits = dateStr.replace(/-/g, '').split('').map(d => parseInt(d));
+            return digits.filter(d => d !== 0);
+        }
+
+        function getFirstDigitOfDay(dateStr) {
+            // Получаем день из даты (формат YYYY-MM-DD)
+            const parts = dateStr.split('-');
+            const day = parts[2]; // День это третья часть
+            // Возвращаем первую цифру дня
+            return parseInt(day[0]);
+        }
+
+        function calculateMatrix() {
+            const dateInput = document.getElementById('birthdate').value;
+            
+            if (!dateInput) {
+                alert('Пожалуйста, выберите дату рождения!');
+                return;
+            }
+
+            // Получаем все цифры даты (без нулей для подсчета)
+            const dateDigits = getAllDigits(dateInput);
+            const allDateDigitsStr = dateDigits.join('');
+            
+            // Первое рабочее число: сумма всех цифр даты
+            const firstWorkNumber = sumDigits(parseInt(allDateDigitsStr));
+            
+            // Второе рабочее число: сумма цифр первого рабочего числа
+            const secondWorkNumber = sumDigits(firstWorkNumber);
+            
+            // Третье рабочее число: первое рабочее число - (первая цифра дня * 2)
+            const firstDigitOfDay = getFirstDigitOfDay(dateInput);
+            const thirdWorkNumber = firstWorkNumber - (firstDigitOfDay * 2);
+            
+            // Четвертое рабочее число: сумма цифр третьего рабочего числа
+            const fourthWorkNumber = sumDigits(thirdWorkNumber);
+
+            // Собираем все цифры для матрицы
+            const allDigitsForMatrix = [
+                ...dateDigits,
+                ...String(firstWorkNumber).split('').map(d => parseInt(d)),
+                ...String(secondWorkNumber).split('').map(d => parseInt(d)),
+                ...String(thirdWorkNumber).split('').map(d => parseInt(d)),
+                ...String(fourthWorkNumber).split('').map(d => parseInt(d))
+            ].filter(d => d !== 0);
+
+            // Подсчитываем количество каждой цифры от 1 до 9
+            const digitCount = {};
+            for (let i = 1; i <= 9; i++) {
+                digitCount[i] = 0;
+            }
+            
+            allDigitsForMatrix.forEach(digit => {
+                if (digit >= 1 && digit <= 9) {
+                    digitCount[digit]++;
+                }
+            });
+
+            // Отображаем расчеты
+            document.getElementById('calc1').innerHTML = 
+                `<strong>Первое рабочее число:</strong> ${dateDigits.join(' + ')} = ${firstWorkNumber}`;
+            document.getElementById('calc2').innerHTML = 
+                `<strong>Второе рабочее число:</strong> ${String(firstWorkNumber).split('').join(' + ')} = ${secondWorkNumber}`;
+            document.getElementById('calc3').innerHTML = 
+                `<strong>Третье рабочее число:</strong> ${firstWorkNumber} - (${firstDigitOfDay} × 2) = ${thirdWorkNumber}`;
+            document.getElementById('calc4').innerHTML = 
+                `<strong>Четвертое рабочее число:</strong> ${String(thirdWorkNumber).split('').join(' + ')} = ${fourthWorkNumber}`;
+            document.getElementById('allDigits').innerHTML = 
+                `<strong>Все цифры:</strong> ${allDigitsForMatrix.join(', ')}`;
+
+            // Строим матрицу 3x3
+            const matrixContainer = document.getElementById('matrix');
+            matrixContainer.innerHTML = '';
+
+            // Порядок ячеек: 1 4 7 / 2 5 8 / 3 6 9
+            const cellOrder = [1, 4, 7, 2, 5, 8, 3, 6, 9];
+
+            cellOrder.forEach(num => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                
+                const cellNum = document.createElement('span');
+                cellNum.className = 'cell-number';
+                cellNum.textContent = num;
+                
+                const digits = document.createElement('span');
+                digits.className = 'cell-digits';
+                // Записываем саму цифру num столько раз, сколько она встречается
+                digits.textContent = digitCount[num] > 0 ? String(num).repeat(digitCount[num]) : '';
+                
+                const count = document.createElement('span');
+                count.className = 'cell-count';
+                count.textContent = digitCount[num] > 0 ? `(${digitCount[num]} шт.)` : '';
+
+                cell.appendChild(cellNum);
+                cell.appendChild(digits);
+                cell.appendChild(count);
+                matrixContainer.appendChild(cell);
+            });
+
+            // Показываем результаты
+            document.getElementById('results').classList.add('show');
+        }
+
+        // Устанавливаем максимальную дату как сегодня
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('birthdate').setAttribute('max', today);
+    </script>
+</body>
+</html>
